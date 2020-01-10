@@ -4,7 +4,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
 
 import javax.jms.*;
-import java.io.IOException;
 
 
 public class JMSWindowController {
