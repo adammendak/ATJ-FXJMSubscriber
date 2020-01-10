@@ -1,11 +1,18 @@
 package sample;
 
-import com.sun.messaging.ConnectionFactory;
-import com.sun.messaging.Topic;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
 
-import javax.jms.*;
+import com.sun.messaging.ConnectionFactory;
+import com.sun.messaging.Topic;
+import com.sun.messaging.jms.JMSException;
+
+import javax.jms.JMSConsumer;
+import javax.jms.JMSContext;
+import javax.jms.Message;
+import javax.jms.TextMessage;
+import javax.jms.MessageListener;
+
 
 public class JMSWindowController {
 
@@ -18,7 +25,7 @@ public class JMSWindowController {
     TextArea chatTextArea;
 
     @FXML
-    private void initialize() throws JMSException {
+    private void initialize() throws javax.jms.JMSException {
         Subscriber subscriber = new Subscriber(URL, TOPIC_NAME);
     }
 
@@ -27,11 +34,9 @@ public class JMSWindowController {
         private JMSConsumer jmsConsumer;
         private Topic topic;
 
-        Subscriber(String url, String topicName) throws JMSException {
-            ConnectionFactory connectionFactory = new com.sun.messaging.ConnectionFactory();
+        Subscriber(String url, String topicName) throws javax.jms.JMSException {
+            ConnectionFactory connectionFactory = new ConnectionFactory();
             jmsContext = connectionFactory.createContext();
-            ((com.sun.messaging.ConnectionFactory) connectionFactory)
-                    .setProperty(com.sun.messaging.ConnectionConfiguration.imqAddressList, url);
             topic = new com.sun.messaging.Topic(topicName);
             jmsConsumer = jmsContext.createConsumer(topic);
             jmsConsumer.setMessageListener(new AsynchSubscriber());
@@ -46,6 +51,8 @@ public class JMSWindowController {
                 try {
                     System.out.printf("Odebrano wiadomość:'%s'%n", ((TextMessage) message).getText());
                 } catch (JMSException e) {
+                    e.printStackTrace();
+                } catch (javax.jms.JMSException e) {
                     e.printStackTrace();
                 }
         }
