@@ -3,20 +3,13 @@ package sample;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
 
-import com.sun.messaging.ConnectionFactory;
-import com.sun.messaging.Topic;
-import com.sun.messaging.jms.JMSException;
-
-import javax.jms.JMSConsumer;
-import javax.jms.JMSContext;
-import javax.jms.Message;
-import javax.jms.TextMessage;
-import javax.jms.MessageListener;
+import javax.jms.*;
+import java.io.IOException;
 
 
 public class JMSWindowController {
 
-    private static final String URL = "localhost:7676/jmsProducer";
+    private static final String URL = "mq://localhost:7676/";
     private static final String TOPIC_NAME = "ATJTopic";
 
     private Subscriber subscriber;
@@ -25,21 +18,21 @@ public class JMSWindowController {
     TextArea chatTextArea;
 
     @FXML
-    private void initialize() throws javax.jms.JMSException {
-        Subscriber subscriber = new Subscriber(URL, TOPIC_NAME);
+    private void initialize() throws JMSException {
+        Subscriber subscriber = new Subscriber();
     }
 
     public class Subscriber {
-        private JMSContext jmsContext;
-        private JMSConsumer jmsConsumer;
-        private Topic topic;
 
-        Subscriber(String url, String topicName) throws javax.jms.JMSException {
-            ConnectionFactory connectionFactory = new ConnectionFactory();
-            jmsContext = connectionFactory.createContext();
-            topic = new com.sun.messaging.Topic(topicName);
-            jmsConsumer = jmsContext.createConsumer(topic);
-            jmsConsumer.setMessageListener(new AsynchSubscriber());
+        Subscriber() throws JMSException {
+            com.sun.messaging.ConnectionFactory connFactory = new com.sun.messaging.ConnectionFactory();
+            connFactory.setProperty(com.sun.messaging.ConnectionConfiguration.imqAddressList, URL);
+            TopicConnection connection = connFactory.createTopicConnection();
+            TopicSession session = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+            Topic topic = new com.sun.messaging.Topic(TOPIC_NAME);
+            TopicSubscriber subscriber = session.createSubscriber(topic);
+            subscriber.setMessageListener(new AsynchSubscriber());
+            connection.start();
         }
     }
 
@@ -47,14 +40,13 @@ public class JMSWindowController {
 
         @Override
         public void onMessage(Message message) {
-            if (message instanceof TextMessage)
+            if (message instanceof TextMessage) {
                 try {
-                    System.out.printf("Odebrano wiadomość:'%s'%n", ((TextMessage) message).getText());
+                    chatTextArea.appendText("Wiadomośc z servera: " + ((TextMessage) message).getText() + "\n");
                 } catch (JMSException e) {
                     e.printStackTrace();
-                } catch (javax.jms.JMSException e) {
-                    e.printStackTrace();
                 }
+            }
         }
     }
 }
